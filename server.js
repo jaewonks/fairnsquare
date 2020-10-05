@@ -5,11 +5,12 @@ const port = 5000
 const bodyParser = require('body-parser') //미들웨어 클라이언트에서 오는 정보를 분석해서 가진다.
 const mongoose = require('mongoose')
 const { User } = require('./models/User')
+const config = require('./config/key')
 
 app.use(bodyParser.urlencoded({extended: true})) //application/x-www=form-urlencoded에서 분석된 정보를 가져온다.
 app.use(bodyParser.json()) //application/json 타입으로 된 것을 분석해서 가져온다.
 
-mongoose.connect('mongodb+srv://Jaewonks:Kk052614..@mall.htg21.mongodb.net/fairnsquare?retryWrites=true&w=majority', {
+mongoose.connect(config.mongoURI, {
     useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false
  //원래되던 기능들을 안되게 막아놓은 것(deprecation) 뭔가 에러가 안뜬다고 합니다..
 }).then(() => console.log("It's connect to MongoDB well done Jay"))
