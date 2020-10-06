@@ -1,15 +1,17 @@
 const express = require('express')
 const app = express()
-const port = 5000
 const bodyParser = require('body-parser') //미들웨어 클라이언트에서 오는 정보를 분석해서 가진다.
-const cookieParser = require('cookie-parser')
+const cookieParser = require("cookie-parser")
+const config = require('./config/key')
 const mongoose = require('mongoose')
 const { User } = require('./models/User')
-const config = require('./config/key')
+const { auth } = require('./middleware/auth')
+
+const port = 5000
 
 app.use(bodyParser.urlencoded({extended: true})) //application/x-www=form-urlencoded에서 분석된 정보를 가져온다.
 app.use(bodyParser.json()) //application/json 타입으로 된 것을 분석해서 가져온다.
-app.use(cookieParser())
+app.use(cookieParser()); //쿠키를 저장
 
 mongoose.connect(config.mongoURI, {
     useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false
@@ -42,9 +44,9 @@ app.post('/api/users/login', (req, res) => {
             //console.log('err',err)
             //console.log('isMatch', isMatch)
             if(!isMatch) return res.json({ loginSuccess: false, message:'Wrong password! please check it again' })
-        
+            //console.log(user)
             //비밀번호까지 일치하면 토큰을 생성하기 - User.js에서 메소드를 만든다.
-            user.generateToken((err,user) => {
+            user.generateToken((err, user) => {
                 if(err) return res.status(400).send(err)
                 //토큰을 저장한다. 어디에...?
                 res.cookie("tokenInCookie", user.token)
@@ -54,5 +56,40 @@ app.post('/api/users/login', (req, res) => {
         })
     })
 })
+
+app.get('/api/users/auth', auth, (req, res) => { 
+/*     middleware/auth.js에서 가져온다.         
+        req.token = token;
+        req.user = user; */
+   //여기까지 미들웨어를 통과해왔다는 얘기는 Authentication이 true
+   // ex)role 0 일반유저 role 1 어드만 role 2 특정부서 어드민 .. 등으로 부여하는 것
+   //console.log(token)
+   //console.log(user)
+   res.status(200).json({
+       //user 정보 
+       _id: req.user._id,
+        isAdmin: req.user.role === 0 ? false : true,
+        isAuth: true,
+        email: req.user.email,
+        name: req.user.name,
+        lastname: req.user.lastname,
+        role: req.user.role,
+        image: req.user.image
+   })
+})
+
+app.get('/api/users/logout', auth, (req, res) => {
+    //로그아웃하려는 유저를 데이터베이스에서 찾는다.
+    /*  middleware/auth.js에서 가져온        
+        req.token = token;
+        req.user = user; */
+    User.findOneAndUpdate({_id: req.user._id},{ token: "" }, (err, user) => {
+        if (err) return res.json({ success: false, err });
+        return res.status(200).send({
+            success: true
+        })
+    })
+})
+
 
 app.listen(port, () => console.log(`listening on localhost:${port}`))
