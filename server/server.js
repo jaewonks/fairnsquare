@@ -21,6 +21,11 @@ mongoose.connect(config.mongoURI, {
 
 app.get('/', (req, res) => res.send('hello my first project'))
 //회원가입을 위한 라우트
+
+app.get('/api/hello', (req, res) => {
+    res.send('Hello')
+})
+
 app.post('/api/users/register', (req,res) => {
     //회원가입할때 필요한 정보들을 Client에서 가져오면 
     const user = new User(req.body) //클라이언트에서 보내온 정보를 담는다.
