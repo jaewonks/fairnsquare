@@ -1,6 +1,6 @@
+import React, { useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { loginUser } from './../../../_actions/user_actions'
-import React, { useState } from 'react'
 
 function LoginPage(props) {
     const dispatch = useDispatch()
@@ -48,8 +48,8 @@ function LoginPage(props) {
                 <label>Password</label>
                 <input type="password" value={Password} onChange={onPWHandler} />
                 <br/>
-                <button>
-                    Login
+                <button type='submit'>
+                    Sign In
                 </button>
             </form>
         </div>
