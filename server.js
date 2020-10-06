@@ -19,7 +19,7 @@ mongoose.connect(config.mongoURI, {
 
 app.get('/', (req, res) => res.send('hello my first project'))
 //회원가입을 위한 라우트
-app.post('/register', (req,res) => {
+app.post('/api/users/register', (req,res) => {
     //회원가입할때 필요한 정보들을 Client에서 가져오면 
     const user = new User(req.body) //클라이언트에서 보내온 정보를 담는다.
     //console.log(req.body)
@@ -30,7 +30,7 @@ app.post('/register', (req,res) => {
         return res.status(200).json({ success: true })
     })
 })
-app.post('/login', (req, res) => {
+app.post('/api/users/login', (req, res) => {
     //데이터 베이스 안에서 요청된 이메일 찾기
     User.findOne({ email: req.body.email }, (err,user) => {
         if(!user) return res.json({
@@ -39,8 +39,8 @@ app.post('/login', (req, res) => {
   
         //이메일이 있다면 비밀번호 일치 여부 확인 - User.js에서 메소드를 만든다.
         user.comparePassword(req.body.password, (err, isMatch) => {
-            console.log('err',err)
-            console.log('isMatch', isMatch)
+            //console.log('err',err)
+            //console.log('isMatch', isMatch)
             if(!isMatch) return res.json({ loginSuccess: false, message:'Wrong password! please check it again' })
         
             //비밀번호까지 일치하면 토큰을 생성하기 - User.js에서 메소드를 만든다.
