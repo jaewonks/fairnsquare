@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react'
 import axios from 'axios'
+import { withRouter } from 'react-router-dom'
 
-function LangindPage(props) {
+function LandingPage(props) {
 
     useEffect(() => {
         axios.get('/api/hello')
@@ -36,4 +37,4 @@ function LangindPage(props) {
     )
 }
 
-export default LangindPage
+export default withRouter(LandingPage)
