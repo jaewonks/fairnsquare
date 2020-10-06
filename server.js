@@ -3,7 +3,6 @@ const app = express()
 const bodyParser = require('body-parser') //미들웨어 클라이언트에서 오는 정보를 분석해서 가진다.
 const cookieParser = require("cookie-parser")
 const config = require('./config/key')
-const mongoose = require('mongoose')
 const { User } = require('./models/User')
 const { auth } = require('./middleware/auth')
 
@@ -13,6 +12,7 @@ app.use(bodyParser.urlencoded({extended: true})) //application/x-www=form-urlenc
 app.use(bodyParser.json()) //application/json 타입으로 된 것을 분석해서 가져온다.
 app.use(cookieParser()); //쿠키를 저장
 
+const mongoose = require('mongoose')
 mongoose.connect(config.mongoURI, {
     useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false
  //원래되던 기능들을 안되게 막아놓은 것(deprecation) 뭔가 에러가 안뜬다고 합니다..
@@ -33,63 +33,66 @@ app.post('/api/users/register', (req,res) => {
     })
 })
 app.post('/api/users/login', (req, res) => {
-    //데이터 베이스 안에서 요청된 이메일 찾기
-    User.findOne({ email: req.body.email }, (err,user) => {
-        if(!user) return res.json({
-            loginSuccess: false, message: 'Fail to login'
-        })
-  
-        //이메일이 있다면 비밀번호 일치 여부 확인 - User.js에서 메소드를 만든다.
-        user.comparePassword(req.body.password, (err, isMatch) => {
-            //console.log('err',err)
-            //console.log('isMatch', isMatch)
-            if(!isMatch) return res.json({ loginSuccess: false, message:'Wrong password! please check it again' })
-            //console.log(user)
-            //비밀번호까지 일치하면 토큰을 생성하기 - User.js에서 메소드를 만든다.
-            user.generateToken((err, user) => {
-                if(err) return res.status(400).send(err)
-                //토큰을 저장한다. 어디에...?
-                res.cookie("tokenInCookie", user.token)
-                .status(200)
-                .json({ loginSuccess:true, userId: user._id })
-            })
-        })
+
+  // console.log('ping')
+  //요청된 이메일을 데이터베이스에서 있는지 찾는다.
+  User.findOne({ email: req.body.email }, (err, user) => {
+
+    // console.log('user', user)
+    if (!user) {
+      return res.json({
+        loginSuccess: false,
+        message: "제공된 이메일에 해당하는 유저가 없습니다."
+      })
+    }
+
+    //요청된 이메일이 데이터 베이스에 있다면 비밀번호가 맞는 비밀번호 인지 확인.
+    user.comparePassword(req.body.password, (err, isMatch) => {
+      // console.log('err',err)
+
+      // console.log('isMatch',isMatch)
+
+      if (!isMatch)
+        return res.json({ loginSuccess: false, message: "비밀번호가 틀렸습니다." })
+
+      //비밀번호 까지 맞다면 토큰을 생성하기.
+      user.generateToken((err, user) => {
+        if (err) return res.status(400).send(err);
+
+        // 토큰을 저장한다.  어디에 ?  쿠키 , 로컳스토리지 
+        res.cookie("tokenInCookie", user.token)
+          .status(200)
+          .json({ loginSuccess: true, userId: user._id })
+      })
     })
+  })
 })
 
-app.get('/api/users/auth', auth, (req, res) => { 
-/*     middleware/auth.js에서 가져온다.         
-        req.token = token;
-        req.user = user; */
-   //여기까지 미들웨어를 통과해왔다는 얘기는 Authentication이 true
-   // ex)role 0 일반유저 role 1 어드만 role 2 특정부서 어드민 .. 등으로 부여하는 것
-   //console.log(token)
-   //console.log(user)
-   res.status(200).json({
-       //user 정보 
-       _id: req.user._id,
-        isAdmin: req.user.role === 0 ? false : true,
-        isAuth: true,
-        email: req.user.email,
-        name: req.user.name,
-        lastname: req.user.lastname,
-        role: req.user.role,
-        image: req.user.image
-   })
-})
+app.get('/api/users/auth', auth, (req, res) => {
+    //여기 까지 미들웨어를 통과해 왔다는 얘기는  Authentication 이 True 라는 말.
+    res.status(200).json({
+      _id: req.user._id,
+      isAdmin: req.user.role === 0 ? false : true,
+      isAuth: true,
+      email: req.user.email,
+      name: req.user.name,
+      lastname: req.user.lastname,
+      role: req.user.role,
+      image: req.user.image
+    })
+  })
 
-app.get('/api/users/logout', auth, (req, res) => {
-    //로그아웃하려는 유저를 데이터베이스에서 찾는다.
-    /*  middleware/auth.js에서 가져온        
-        req.token = token;
-        req.user = user; */
-    User.findOneAndUpdate({_id: req.user._id},{ token: "" }, (err, user) => {
+  app.get('/api/users/logout', auth, (req, res) => {
+    // console.log('req.user', req.user)
+    User.findOneAndUpdate({ _id: req.user._id },
+      { token: "" }
+      , (err, user) => {
         if (err) return res.json({ success: false, err });
         return res.status(200).send({
-            success: true
+          success: true
         })
-    })
-})
+      })
+  })
 
 
 app.listen(port, () => console.log(`listening on localhost:${port}`))
